@@ -11,6 +11,18 @@ app = FastAPI()
 os.makedirs("descargas", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
+# --- SISTEMA DE COOKIES SEGURAS ---
+# Lee el contenido de las cookies desde las variables de entorno de Render
+contenido_cookies = os.environ.get("YOUTUBE_COOKIES")
+
+if contenido_cookies:
+    # Crea el archivo cookies.txt en el servidor Linux en tiempo de ejecución
+    with open("cookies.txt", "w", encoding="utf-8") as f:
+        f.write(contenido_cookies)
+# ----------------------------------
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
@@ -36,6 +48,7 @@ async def procesar_descarga(request: Request):
         'noplaylist': True,
         'quiet': True,
         'ffmpeg_location': ruta_script,
+        'cookiefile': 'cookies.txt',  # Dejar esto igual, el script ya habrá creado el archivo
         'postprocessors': []
     }
     
