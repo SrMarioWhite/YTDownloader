@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Audio y Video yt-dlp</title>
+    <style>
+        :root {
+            --bg-color: #1e1e2e;
+            --panel-bg: #181825;
+            --text-color: #cdd6f4;
+            --accent: #89b4fa;
+            --accent-hover: #b4befe;
+            --border-color: #313244;
+            --console-bg: #11111b;
+            --console-text: #a6e3a1;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            margin: 0;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+        .contenedor {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+            color: #a6adc8;
+        }
+        input[type="text"], select {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-color);
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+        fieldset {
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 10px;
+            padding: 20px;
+        }
+        legend {
+            color: var(--accent);
+            padding: 0 5px;
+            font-weight: bold;
+        }
+        .grid-opciones {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+            align-items: center;
+        }
+        .grid-full {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #a6adc8;
+        }
+        button {
+            background-color: var(--accent);
+            color: #11111b;
+            border: none;
+            border-radius: 6px;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+        button:disabled {
+            background-color: #45475a;
+            color: #7f849c;
+            cursor: not-allowed;
+        }
+        .consola {
+            background-color: var(--console-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            color: var(--console-text);
+            height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor">
+        <label>Enlace de YouTube (o Spotify/Playlist):</label>
+        <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=...">
+        
+        <fieldset>
+            <legend>Opciones de Extracción</legend>
+            <div class="grid-opciones">
+                <label>Tipo de Archivo:</label>
+                <select id="tipo" onchange="actualizarCalidades()">
+                    <option value="Audio (MP3)">Audio (MP3)</option>
+                    <option value="Video (MP4)">Video (MP4)</option>
+                </select>
+
+                <label>Calidad:</label>
+                <select id="calidad">
+                    <option value="320">320K (Estudio)</option>
+                    <option value="256">256K (Alta)</option>
+                    <option value="128">128K (Estándar)</option>
+                    <option value="96">96K (Ligero)</option>
+                </select>
+
+                <div class="grid-full">
+                    <input type="checkbox" id="miniatura" checked>
+                    <label for="miniatura">Incrustar Miniatura Oficial (Portada)</label>
+                </div>
+                
+                <div class="grid-full">
+                    <input type="checkbox" id="subtitulos" disabled>
+                    <label for="subtitulos">Incrustar Subtítulos Automáticos (Solo Video)</label>
+                </div>
+            </div>
+        </fieldset>
+        
+        <button id="btnDescargar" onclick="iniciarDescarga()">INICIAR DESCARGA</button>
+        
+        <label>Registro del sistema en tiempo real:</label>
+        <div id="consola" class="consola">Esperando instrucciones...</div>
+    </div>
+
+    <script>
+        function actualizarCalidades() {
+            const tipo = document.getElementById('tipo').value;
+            const selectCalidad = document.getElementById('calidad');
+            const checkSubtitulos = document.getElementById('subtitulos');
+            
+            selectCalidad.innerHTML = '';
+            
+            if (tipo === "Audio (MP3)") {
+                selectCalidad.innerHTML = `
+                    <option value="320">320K (Estudio)</option>
+                    <option value="256">256K (Alta)</option>
+                    <option value="128">128K (Estándar)</option>
+                    <option value="96">96K (Ligero)</option>
+                `;
+                checkSubtitulos.disabled = true;
+                checkSubtitulos.checked = false;
+            } else {
+                selectCalidad.innerHTML = `
+                    <option value="best">Mejor disponible</option>
+                    <option value="1080">1080p</option>
+                    <option value="720">720p</option>
+                    <option value="480">480p</option>
+                `;
+                checkSubtitulos.disabled = false;
+            }
+        }
+
+        function escribirConsola(texto) {
+            const consola = document.getElementById('consola');
+            consola.innerHTML += `\n${texto}`;
+            consola.scrollTop = consola.scrollHeight;
+        }
+
+        async function iniciarDescarga() {
+            const url = document.getElementById('url').value;
+            if (!url) {
+                escribirConsola(">> Por favor, ingresa un enlace válido antes de continuar.");
+                return;
+            }
+            
+            const payload = {
+                url: url,
+                tipo: document.getElementById('tipo').value,
+                calidad: document.getElementById('calidad').value,
+                miniatura: document.getElementById('miniatura').checked,
+                subtitulos: document.getElementById('subtitulos').checked
+            };
+            
+            const btn = document.getElementById('btnDescargar');
+            btn.disabled = true;
+            btn.innerText = "DESCARGANDO... POR FAVOR ESPERA";
+            document.getElementById('consola').innerHTML = "Iniciando conexión con los servidores...\n--------------------------------------------------";
+            
+            try {
+                escribirConsola("Transfiriendo parámetros de extracción al backend...");
+                escribirConsola(`Tipo: ${payload.tipo} | Calidad: ${payload.calidad}`);
+                escribirConsola("Procesando multimedia en el servidor local. Esto puede tardar varios segundos.");
+                
+                const respuesta = await fetch('/descargar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!respuesta.ok) throw new Error("Fallo en la comunicación con yt-dlp");
+                
+                escribirConsola("Extracción completada. Preparando archivo para transferencia de red...");
+                const blob = await respuesta.blob();
+                const headerDisposicion = respuesta.headers.get('Content-Disposition');
+                let nombreArchivo = "descarga_multimedia";
+                
+                if (headerDisposicion && headerDisposicion.includes('filename=')) {
+                    nombreArchivo = headerDisposicion.split('filename=')[1].replace(/"/g, '');
+                } else {
+                    nombreArchivo += payload.tipo.includes("MP3") ? ".mp3" : ".mp4";
+                }
+                
+                const urlBlob = window.URL.createObjectURL(blob);
+                const enlaceTemporal = document.createElement('a');
+                enlaceTemporal.href = urlBlob;
+                enlaceTemporal.download = decodeURIComponent(nombreArchivo);
+                document.body.appendChild(enlaceTemporal);
+                enlaceTemporal.click();
+                enlaceTemporal.remove();
+                
+                escribirConsola("=== PROCESO COMPLETADO ===");
+            } catch (error) {
+                escribirConsola(`Error crítico: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "INICIAR DESCARGA";
+            }
+        }
+    </script>
+</body>
+</html>
