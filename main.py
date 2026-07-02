@@ -49,6 +49,10 @@ async def procesar_descarga(request: Request):
         'quiet': True,
         'ffmpeg_location': ruta_script,
         'cookiefile': 'cookies.txt',  # Dejar esto igual, el script ya habrá creado el archivo
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'tv']
+            }
         'postprocessors': []
     }
     
