@@ -53,6 +53,7 @@ async def procesar_descarga(request: Request):
             'youtube': {
                 'player_client': ['ios', 'tv']
             }
+        },
         'postprocessors': []
     }
     
