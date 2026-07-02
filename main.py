@@ -48,21 +48,12 @@ async def procesar_descarga(request: Request):
         'noplaylist': True,
         'quiet': True,
         'ffmpeg_location': ruta_script,
-        'cookiefile': 'cookies.txt',  # Dejar esto igual, el script ya habrá creado el archivo
-        opciones_ytdlp = {
-        'outtmpl': ruta_salida,
-        'noplaylist': True,
-        'quiet': True,
-        'ffmpeg_location': ruta_script,
         'cookiefile': 'cookies.txt',
         'extractor_args': {
             'youtube': {
-                # Usamos Smart TV y Web Móvil: ambos soportan cookies y evaden el bloqueo estricto
                 'player_client': ['tv', 'mweb']
             }
         },
-        'postprocessors': []
-    }
         'postprocessors': []
     }
     
